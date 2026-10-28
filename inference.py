@@ -1,6 +1,5 @@
 import torch
 import cv2
-import numpy as np
 from PIL import Image
 from torchvision import transforms, models
 import torch.nn as nn
@@ -17,16 +16,12 @@ class CropDiseaseInference:
         self.model = models.efficientnet_b3()
         self.model.classifier[1] = nn.Linear(self.model.classifier[1].in_features, num_classes)
         
-        try:
-            checkpoint = torch.load(model_path, map_location=self.device)
-            if isinstance(checkpoint, dict) and 'state_dict' in checkpoint:
-                self.model.load_state_dict(checkpoint['state_dict'])
-                print(f"Model loaded successfully from {model_path}")
-            else:
-                self.model.load_state_dict(checkpoint)
-                print(f"Model loaded successfully from {model_path}")
-        except Exception as e:
-            print(f"Warning: Could not load weights: {e}")
+        checkpoint = torch.load(model_path, map_location=self.device)
+        if isinstance(checkpoint, dict) and 'state_dict' in checkpoint:
+            self.model.load_state_dict(checkpoint['state_dict'])
+        else:
+            self.model.load_state_dict(checkpoint)
+        print(f"Model loaded successfully from {model_path}")
             
         self.model.to(self.device)
         self.model.eval()
@@ -87,7 +82,7 @@ class CropDiseaseInference:
         
         import os
         os.makedirs(os.path.dirname(visual_output), exist_ok=True)
-        cv2.imwrite(visual_output, cv2.cvtColor((visualization * 255).astype(np.uint8), cv2.COLOR_RGB2BGR))
+        cv2.imwrite(visual_output, cv2.cvtColor(visualization, cv2.COLOR_RGB2BGR))
         
         split = class_name.split("_", 1)
         web_path = f"/{visual_output}".replace('\\', '/')

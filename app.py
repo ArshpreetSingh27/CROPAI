@@ -7,6 +7,8 @@ import shutil
 import random
 import time
 import httpx
+import tempfile
+from pathlib import Path
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
@@ -54,8 +56,8 @@ async def add_no_cache_header(request, call_next):
     return response
 
 TEST_DATASET_FILES = set()
-TEST_DATA_DIR = r"D:\crop\dataset_final\test"
-if os.path.exists(TEST_DATA_DIR):
+TEST_DATA_DIR = os.getenv("CROP_TEST_DATA_DIR")
+if TEST_DATA_DIR and os.path.exists(TEST_DATA_DIR):
     for root, dirs, files in os.walk(TEST_DATA_DIR):
         for f in files:
             TEST_DATASET_FILES.add(f)
@@ -78,10 +80,16 @@ MOCK_CLASSES = [
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
+    if predictor is None:
+        return JSONResponse(
+            content={"error": "Model checkpoint unavailable. Add best_model_vision_autosave.pth to enable predictions."},
+            status_code=503,
+        )
     print(f"DEBUG: /predict received file: {file.filename}")
-    file_path = f"temp/{file.filename}"
-    
-    with open(file_path, "wb") as buffer:
+    with tempfile.NamedTemporaryFile(
+        mode="wb", suffix=Path(file.filename or "").suffix, dir="temp", delete=False
+    ) as buffer:
+        file_path = buffer.name
         shutil.copyfileobj(file.file, buffer)
         
     try:
@@ -91,6 +99,9 @@ async def predict(file: UploadFile = File(...)):
             is_dataset_img = file.filename in TEST_DATASET_FILES
             if is_dataset_img:
                 print(f"SECRET: Fast Path - Dataset image detected: {file.filename}")
+                return JSONResponse(content=result)
+
+            if not os.getenv("GEMINI_API_KEY"):
                 return JSONResponse(content=result)
             
             try:

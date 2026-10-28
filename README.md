@@ -1,68 +1,48 @@
 # CropVision AI
 
-CropVision AI is a web application for exploring crop leaf disease predictions. Upload a leaf image to see a predicted class, symptom and treatment information, and a Grad-CAM heatmap showing image regions used by the model.
+CropVision AI is a FastAPI web app for classifying crop leaf images. Its interface displays a disease prediction, class information, and a Grad-CAM heatmap. The 17 classes cover tomato, potato, and corn, including healthy leaves. This is a project prototype; check predictions and treatment suggestions independently before field use.
 
-The application supports **17 classes** across **tomato, potato, and corn**, including healthy leaves. It is a project prototype; predictions and treatment suggestions should be independently checked before use in the field.
+## What is in this repository
 
-## Features
+```text
+app.py                    FastAPI routes and web app entry point
+inference.py              EfficientNet-B3 inference and Grad-CAM
+class_symptoms.json       Labels, symptoms, and treatments for 17 classes
+class_weights.json        Training class weights
+static/                   HTML, CSS, and browser JavaScript
+scripts/                  Training and diagnostic programs
+notebooks/                Colab training notebooks
+examples/                 Saved example heatmaps
+requirements.txt          Web app dependencies
+requirements-training.txt Optional training and analysis dependencies
+VIVA_GUIDE.md             Project study notes
+```
 
-- **Leaf image upload:** drag and drop or choose an image in the browser.
-- **Image classification:** PyTorch EfficientNet-B3 inference with test-time image transformations.
-- **Visual explanation:** Grad-CAM heatmap for each prediction.
-- **Class information:** symptoms, organic treatments, chemical treatments, and danger levels from `class_symptoms.json`.
-- **Optional AI advice:** language-specific advice through Groq's API.
-- **Optional audio:** Sarvam AI text-to-speech, with a browser speech fallback.
-- **PDF report:** client-side export using jsPDF and html2canvas.
+The app files are at the repository root. Run the commands below from that directory.
 
-## Tech stack
-
-| Layer | Technologies |
-| --- | --- |
-| Frontend | HTML, CSS, vanilla JavaScript |
-| API | Python, FastAPI, Uvicorn |
-| Computer vision | PyTorch, Torchvision, EfficientNet-B3, OpenCV, Grad-CAM |
-| Optional services | Groq, Sarvam AI, Google Gemini |
-| Report export | jsPDF, html2canvas |
-
-## Getting started
-
-### 1. Clone and install
+## Setup
 
 ```bash
-git clone https://github.com/ArshpreetSingh27/Crop_Disease_Detection.git
-cd Crop_Disease_Detection
+git clone https://github.com/ArshpreetSingh27/CROPAI.git
+cd CROPAI
 python -m venv .venv
 ```
 
-Activate the environment:
+Activate the environment in PowerShell with `.venv\Scripts\Activate.ps1`, or on macOS/Linux with `source .venv/bin/activate`. Then install dependencies:
 
 ```bash
-# Windows PowerShell
-.venv\Scripts\Activate.ps1
-
-# macOS / Linux
-source .venv/bin/activate
+python -m pip install -r requirements.txt
 ```
 
-Install the application dependencies:
+### Model checkpoint
 
-```bash
-pip install -r requirements.txt
-```
+Place a trained EfficientNet-B3 checkpoint named `best_model_vision_autosave.pth` in the repository root. It must match the 17 labels in `class_symptoms.json`.
 
-### 2. Add model weights
+**The checkpoint is not included.** The interface can load without it, but `/predict` returns HTTP 503 until a valid checkpoint is available. Model files and datasets are excluded by `.gitignore`.
 
-Place your trained EfficientNet-B3 checkpoint at the repository root as:
+### Optional API keys
 
-```text
-best_model_vision_autosave.pth
-```
-
-Model weights and datasets are excluded from Git by `.gitignore`. **The repository does not include a trained checkpoint.** Although the application may start without the file, predictions are not meaningful until valid weights are loaded. The checkpoint must match the 17 classes in `class_symptoms.json`.
-
-### 3. Configure optional API features
-
-Create a `.env` file in the repository root if you want to use the external services:
+Create a root-level `.env` file to enable external services:
 
 ```dotenv
 GROQ_API_KEY=your_groq_key
@@ -70,54 +50,47 @@ SARVAM_API_KEY=your_sarvam_key
 GEMINI_API_KEY=your_gemini_key
 ```
 
-- `GROQ_API_KEY` enables the **Get Expert Solution** response.
-- `SARVAM_API_KEY` enables Sarvam audio; the frontend can fall back to browser speech.
-- `GEMINI_API_KEY` is used by an optional image-label override in `/predict`.
+Groq provides optional text advice; Sarvam provides optional speech, with a browser speech fallback. The current `/predict` implementation may use Gemini to override the model label and display a generated confidence value when a key is configured. That value is **not** a calibrated model probability. Keep `.env` private.
 
-Keep `.env` private; it is ignored by Git.
+For the optional dataset-image fast path in `app.py`, set `CROP_TEST_DATA_DIR` to the local test-image directory. Leave it unset for normal predictions.
 
-### 4. Run the app
+## Run
 
 ```bash
 uvicorn app:app --host 127.0.0.1 --port 8090
 ```
 
-Open [http://127.0.0.1:8090](http://127.0.0.1:8090). FastAPI's interactive API documentation is available at [http://127.0.0.1:8090/docs](http://127.0.0.1:8090/docs).
-
-## API
+Open [http://127.0.0.1:8090](http://127.0.0.1:8090). API documentation is at [http://127.0.0.1:8090/docs](http://127.0.0.1:8090/docs).
 
 | Route | Method | Purpose |
 | --- | --- | --- |
-| `/` | GET | Serve the web interface |
-| `/predict` | POST | Accept a leaf image as multipart form data under the `file` field |
-| `/ask_ai` | POST | Return advice for a crop, disease, and language |
-| `/tts` | POST | Return speech audio for text and language |
+| `/` | GET | Serve the interface |
+| `/predict` | POST | Predict from multipart image field `file` |
+| `/ask_ai` | POST | Request optional text advice |
+| `/tts` | POST | Request optional speech audio |
 
-Example prediction request:
+Example:
 
 ```bash
 curl -X POST -F "file=@path/to/leaf.jpg" http://127.0.0.1:8090/predict
 ```
 
-The prediction response includes the crop, disease, confidence string, symptoms, treatments, danger level, and a Grad-CAM image path.
+## Training and diagnostics
 
-## Project structure
+For standalone scripts, install the additional dependencies and run modules from the repository root:
 
-```text
-app.py                         FastAPI routes and static-file serving
-inference.py                   EfficientNet-B3 inference and Grad-CAM
-class_symptoms.json            Class labels, symptoms, and treatments
-model_training_vision_only.py  Vision-model training script
-CropVision_*Training.ipynb     Training notebooks
-static/                        Web interface and generated heatmap
-requirements.txt               Application dependencies
+```bash
+python -m pip install -r requirements-training.txt
+python -m scripts.check_sorting
+python -m scripts.model_training_vision_only
 ```
 
-The training scripts expect an ImageFolder-style dataset with `train/` and `val/` directories. The notebooks use Google Colab and Google Drive paths; adjust those paths for your environment.
+The scripts expect local ImageFolder-style datasets such as `dataset_final/train`, `dataset_final/val`, and `dataset_final/test`. Several diagnostics also expect `best_model_vision.pth`; provide that checkpoint before using them. The notebooks in `notebooks/` target Google Colab and have Drive-specific paths that need adjustment for your dataset.
 
-## Current limitations
+## Completeness and limitations
 
-- No trained weights or dataset are published in this repository, and no reproducible accuracy figure is provided here.
-- `app.py` includes an optional Gemini label override that can replace the model's predicted label and displayed confidence. Do not treat that displayed value as a calibrated model probability.
-- The Grad-CAM image is written to a shared path in `static/`; concurrent requests can overwrite it.
-- A machine-specific test-image path in `app.py` is skipped when that directory does not exist.
+- Source code, frontend assets, training scripts, notebooks, class metadata, and example heatmaps are present.
+- Trained checkpoints and datasets are absent, so end-to-end prediction accuracy cannot be reproduced from this repository alone.
+- Optional external API features require your own keys.
+- The generated Grad-CAM image is written to a shared `static/gradcam.jpg` path; simultaneous predictions can overwrite each other's heatmap.
+- Some diagnostic scripts contain machine-specific paths or assume local datasets. Adjust those before running them on another computer.

@@ -1,0 +1,6 @@
+-r requirements.txt
+datasets
+sentence-transformers
+scikit-learn
+matplotlib
+seaborn

@@ -6,6 +6,6 @@ torchvision
 opencv-python
 numpy
 Pillow
-pytorch-grad-cam
+grad-cam
 python-dotenv
 httpx

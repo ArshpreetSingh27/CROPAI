@@ -1,0 +1,24 @@
+.venv/
+.env
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Training data and checkpoints
+dataset/
+dataset_final/
+dataset_final.zip
+train/
+val/
+test/
+*.pth
+*.pt
+*.ckpt
+
+# Runtime outputs
+temp/
+static/gradcam.jpg
+static/debug_healthy_gradcam.jpg
+output_detected.mp4
+*.log

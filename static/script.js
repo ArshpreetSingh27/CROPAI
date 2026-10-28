@@ -56,7 +56,11 @@ function handleUpload(file) {
     formData.append("file", file);
 
     fetch("/predict", { method: "POST", body: formData })
-    .then(response => response.json())
+    .then(async response => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Prediction failed.');
+        return data;
+    })
     .then(data => {
         currentPrediction = data;
         document.getElementById('res-disease').innerText = data.disease.toUpperCase();
@@ -80,7 +84,7 @@ function handleUpload(file) {
     })
     .catch(err => {
         console.error(err);
-        alert("Server Error!");
+        alert(err.message || "Server Error!");
         loadingState.classList.add('hidden');
         idleState.classList.remove('hidden');
     });

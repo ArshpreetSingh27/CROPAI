@@ -54,7 +54,7 @@ This is a **Full-Stack AI Web Application**.
 ### 6. `class_symptoms.json` (The Database)
 *   **Purpose**: A mapping file that translates technical class names (like `Tomato_Early_Blight`) into human-readable symptoms and action steps.
 
-### 7. `model_training_vision_only.py` (The Training Lab)
+### 7. `scripts/model_training_vision_only.py` (The Training Lab)
 *   **Purpose**: The script used to train the final model.
 *   **Key Logic**: Uses **Transfer Learning** (starting with a pre-trained model and fine-tuning it on your crop dataset).
 
@@ -69,7 +69,7 @@ It stands for **Gradient-weighted Class Activation Mapping**. It’s a technique
 Instead of training a model from scratch, we used a model that already "knows" how to see (trained on ImageNet) and taught it specifically about crop diseases.
 
 ### Why not VLM?
-We experimented with a **Vision-Language Model (VLM)** in `model_training.py`, but chose a pure Vision model for the final app because it is faster, more robust against "label leakage," and allows for better visual explanations with Grad-CAM.
+We experimented with a **Vision-Language Model (VLM)** in `scripts/model_training.py`, but chose a pure Vision model for the final app because it is faster, more robust against "label leakage," and allows for better visual explanations with Grad-CAM.
 
 ---
 
